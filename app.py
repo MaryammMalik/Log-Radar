@@ -19,6 +19,16 @@ app.config["ALLOWED_EXTENSIONS"] = {"log", "txt"}
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
+with app.app_context():
+    db.create_all()
+    if not User.query.filter_by(username="admin").first():
+        admin = User(
+            username="admin",
+            password=generate_password_hash("admin123"),
+            is_admin=True
+        )
+        db.session.add(admin)
+        db.session.commit()
 
 # ---- MODELS ----
 class User(db.Model, UserMixin):
