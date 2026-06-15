@@ -41,16 +41,19 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
 def initialize_db():
-    with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(username="admin").first():
-            admin = User(
-                username="admin",
-                password=generate_password_hash("admin123"),
-                is_admin=True
-            )
-            db.session.add(admin)
-            db.session.commit()
+    try:
+        with app.app_context():
+            db.create_all()
+            if not User.query.filter_by(username="admin").first():
+                admin = User(
+                    username="admin",
+                    password=generate_password_hash("admin123"),
+                    is_admin=True
+                )
+                db.session.add(admin)
+                db.session.commit()
+    except Exception as e:
+        print(f"DB init error: {e}")
 
 initialize_db()
 
