@@ -19,16 +19,7 @@ app.config["ALLOWED_EXTENSIONS"] = {"log", "txt"}
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
-with app.app_context():
-    db.create_all()
-    if not User.query.filter_by(username="admin").first():
-        admin = User(
-            username="admin",
-            password=generate_password_hash("admin123"),
-            is_admin=True
-        )
-        db.session.add(admin)
-        db.session.commit()
+
 
 # ---- MODELS ----
 class User(db.Model, UserMixin):
@@ -144,7 +135,7 @@ def upload():
     flash("File analyzed successfully!", "success")
     return redirect(url_for("dashboard"))
 
-if __name__ == "__main__":
+def initialize_db():
     with app.app_context():
         db.create_all()
         if not User.query.filter_by(username="admin").first():
@@ -155,5 +146,8 @@ if __name__ == "__main__":
             )
             db.session.add(admin)
             db.session.commit()
-            print("✅ Admin user created — username: admin / password: admin123")
-    app.run(debug=True)
+
+initialize_db()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
