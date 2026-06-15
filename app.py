@@ -20,8 +20,6 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
-
-# ---- MODELS ----
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -42,7 +40,20 @@ def load_user(user_id):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
-# ---- ROUTES ----
+def initialize_db():
+    with app.app_context():
+        db.create_all()
+        if not User.query.filter_by(username="admin").first():
+            admin = User(
+                username="admin",
+                password=generate_password_hash("admin123"),
+                is_admin=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+initialize_db()
+
 @app.route("/")
 def index():
     return redirect(url_for("login"))
@@ -62,8 +73,7 @@ def register():
     if request.method == "POST":
         username = request.form["username"].strip()
         password = request.form["password"]
-        confirm  = request.form["confirm_password"]
-
+        confirm = request.form["confirm_password"]
         if len(username) < 3:
             flash("Username must be at least 3 characters", "error")
             return render_template("register.html")
@@ -76,7 +86,6 @@ def register():
         if User.query.filter_by(username=username).first():
             flash("Username already taken", "error")
             return render_template("register.html")
-
         new_user = User(
             username=username,
             password=generate_password_hash(password),
@@ -86,7 +95,6 @@ def register():
         db.session.commit()
         flash("Account created! Please sign in.", "success")
         return redirect(url_for("login"))
-
     return render_template("register.html")
 
 @app.route("/logout")
@@ -134,20 +142,6 @@ def upload():
     db.session.commit()
     flash("File analyzed successfully!", "success")
     return redirect(url_for("dashboard"))
-
-def initialize_db():
-    with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(username="admin").first():
-            admin = User(
-                username="admin",
-                password=generate_password_hash("admin123"),
-                is_admin=True
-            )
-            db.session.add(admin)
-            db.session.commit()
-
-initialize_db()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
